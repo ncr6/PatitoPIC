@@ -1,0 +1,82 @@
+'PROGRAMAS QUE ESCRIBEN EN LOS PUERTOS DE SALIDA
+DEFINE OSC 4    'siempre primero son los define , frecuencia=4Mhz
+
+TRISA = %11111     'comandos TRIS establecen el puerto de E o S
+TRISB = %000000000    ' un 1 es entrada y un 0 es salida
+
+U VAR BYTE
+D VAR BYTE
+C VAR BYTE
+M VAR BYTE
+
+P VAR BYTE
+I VAR BYTE
+
+P=1
+I=0
+
+M=0 : C=6 : D=2 : U=1
+
+A0 VAR BIT
+A1 VAR BIT
+A2 VAR BIT
+
+BLINK VAR BIT
+LCD_ENABLE VAR BIT
+OLD_A0 VAR BIT
+
+BLINK=0
+LCD_ENABLE=0
+OLD_A0=1
+
+SALIDA VAR BYTE
+
+INICIO:
+
+  'LECTURA DE LAS ENTRADAS
+   A0=PORTA.0
+
+   'DECODIFICACIÓN DE LAS ENTRADAS
+   'ACCION A REALIZAR
+   
+   if OLD_A0=0 AND A0=1 THEN   ' ACTIVACION POR FLANCO DE SUBIDA
+        BLINK=~BLINK
+        i=0
+   ENDIF
+   
+   if I=80 THEN
+        I=0
+        LCD_ENABLE=~LCD_ENABLE
+   ENDIF
+   
+   IF P=1 THEN
+        IF BLINK=1 THEN
+            IF LCD_ENABLE=1 THEN
+                SALIDA=U
+            ELSE
+                SALIDA=15
+            ENDIF
+            I=I+1
+        ELSE
+            SALIDA=U
+        ENDIF
+   ENDIF
+   IF P=2 THEN SALIDA=D
+   IF P=4 THEN SALIDA=C
+   IF P=8 THEN SALIDA=M
+                                                                       
+   'ACTUALIZACIÓN DE SALIDAS        
+   PORTB = (15-P) * 16 + SALIDA 
+
+  'PUESTA EN ESTADO INICIAL DE LAS VARIABLES 
+   P=2*P
+   if p=16 then p=1
+   
+   OLD_A0 = A0
+   
+   pause 1
+    
+  'LAS PAUSAS SON INCORRECTAS    PAUSAS ACEPTABLES 1-10 MSEG
+GOTO INICIO
+
+'PROCEDIMIENTOS O PROCESOS

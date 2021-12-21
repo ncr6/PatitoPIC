@@ -1,0 +1,77 @@
+'PROGRAMAS QUE ESCRIBEN EN LOS PUERTOS DE SALIDA
+DEFINE OSC 4    'siempre primero son los define , frecuencia=4Mhz
+
+TRISA = %11111     'comandos TRIS establecen el puerto de E o S
+TRISB = %000000000    ' un 1 es entrada y un 0 es salida
+
+DIGITOS VAR BYTE[4]
+
+DIGITOS[0] = 0
+DIGITOS[1] = 6
+DIGITOS[2] = 2
+DIGITOS[3] = 1
+
+
+P VAR BYTE
+I VAR BYTE
+TMP VAR BYTE
+
+P = 1
+I = 3
+TMP = 0
+
+A0 VAR BIT
+A1 VAR BIT
+A2 VAR BIT
+
+BLINK VAR BIT
+LCD_ENABLE VAR BIT
+OLD_A0 VAR BIT
+
+BLINK = 0
+LCD_ENABLE = 0
+OLD_A0 = 1
+
+SALIDA VAR BYTE
+
+INICIO:
+
+  'LECTURA DE LAS ENTRADAS
+   A0 = PORTA.0
+
+   'DECODIFICACIÓN DE LAS ENTRADAS
+   'ACCION A REALIZAR
+   
+   if OLD_A0 = 0 AND A0 = 1 THEN   ' ACTIVACION POR FLANCO DE SUBIDA
+       if i = 0 then
+           FOR POS=0 TO 2 STEP 1
+               tmp = DIGITOS[POS]
+           I = 3
+       eLSE
+           TMP = DIGITOS[I]
+           digitos[i] = DIGITOS[I-1]
+           DIGITOS[I-1] = TMP
+           i = i-1 
+       Endif
+   ENDIF
+   
+   IF P = 1 THEN SALIDA = DIGITOS[3]
+   IF P = 2 THEN SALIDA = DIGITOS[2]
+   IF P = 4 THEN SALIDA = DIGITOS[1]
+   IF P = 8 THEN SALIDA = DIGITOS[0]
+                                                                       
+   'ACTUALIZACIÓN DE SALIDAS        
+   PORTB = (15-P) * 16 + SALIDA 
+
+  'PUESTA EN ESTADO INICIAL DE LAS VARIABLES 
+   P = 2*P
+   if p = 16 then p = 1
+   
+   OLD_A0 = A0
+   
+   pause 1
+    
+  'LAS PAUSAS SON INCORRECTAS    PAUSAS ACEPTABLES 1-10 MSEG
+GOTO INICIO
+
+'PROCEDIMIENTOS O PROCESOS
