@@ -11,14 +11,16 @@ DIGITOS[1] = 6
 DIGITOS[2] = 2
 DIGITOS[3] = 1
 
-
+TMP VAR BYTE
+TMP2 VAR BYTE
 P VAR BYTE
 I VAR BYTE
-TMP VAR BYTE
+POS VAR BYTE
 
+tmp = 0
+TMP2 = 0
 P = 1
 I = 3
-TMP = 0
 
 A0 VAR BIT
 A1 VAR BIT
@@ -43,13 +45,17 @@ INICIO:
    'ACCION A REALIZAR
    
    if OLD_A0 = 0 AND A0 = 1 THEN   ' ACTIVACION POR FLANCO DE SUBIDA
+       TMP = DIGITOS[I]
        if i = 0 then
-           FOR POS=0 TO 2 STEP 1
-               tmp = DIGITOS[POS]
+           FOR POS = 0 TO 2 STEP 1
+                TMP2 = DIGITOS[POS]
+                DIGITOS[POS] = DIGITOS[POS+1]
+                DIGITOS[POS+1] = TMP2
+           NEXT POS
+           DIGITOS[3] = TMP 
            I = 3
        eLSE
-           TMP = DIGITOS[I]
-           digitos[i] = DIGITOS[I-1]
+           DIGITOS[I] = DIGITOS[I-1]
            DIGITOS[I-1] = TMP
            i = i-1 
        Endif
