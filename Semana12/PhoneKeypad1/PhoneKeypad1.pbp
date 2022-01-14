@@ -23,6 +23,7 @@ WPRC VAR BYTE
 ROW VAR BYTE
 CUR_POS VAR BYTE
 CLRC VAR BYTE
+CLRD VAR BYTE
 WRITABLE VAR BIT
 
 ROW = 1
@@ -74,7 +75,10 @@ PRINT_CHAR:
         IF ROW=1 THEN LCDOUT "1"
         IF ROW=2 THEN LCDOUT "4"
         IF ROW=4 THEN LCDOUT "7"
-        IF ROW=8 THEN LCDOUT "*"
+        IF ROW=8 THEN
+            LCDOUT "*"
+            CLRD = CLRD+1
+        ENDIF
     ENDIF
     IF A3=1 THEN
         IF ROW=1 THEN LCDOUT "2"
@@ -99,8 +103,23 @@ PRINT_CHAR:
     IF CUR_POS=32 THEN LCDOUT $FE, 2
     
     IF CLRC = 3 THEN
+        CLRC = 0                                                                                                                                                                 
         LCDOUT $FE, 1 
-        CLRC = 0
         CUR_POS = 0
     ENDIF
+    
+    IF CLRD = 2 THEN
+        LCDOUT $FE, $10
+        LCDOUT $FE, $10
+        LCDOUT $FE, $10
+        LCDOUT 0
+        LCDOUT 0
+        LCDOUT 0
+        LCDOUT $FE, $10
+        LCDOUT $FE, $10
+        LCDOUT $FE, $10
+        CLRD = 0
+        CUR_POS = CUR_POS-2
+    ENDIF
 RETURN
+
