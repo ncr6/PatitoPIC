@@ -22,9 +22,11 @@ KEY_ITER VAR WORD
 WPRC VAR BYTE
 ROW VAR BYTE
 CUR_POS VAR BYTE
-CLRC VAR BYTE
-CLRD VAR BYTE
+CHAR VAR BYTE
+OLD_CHAR VAR BYTE
 WRITABLE VAR BIT
+CLR_ACUM VAR BIT
+OPERATION VAR BIT
 
 ROW = 1
 WRITABLE = 1
@@ -35,6 +37,7 @@ A4 VAR BIT
 
 LCDOUT $FE, $0E
 
+
 INICIO:
 
     A2 = PORTA.2
@@ -44,26 +47,26 @@ INICIO:
     if A2=1 OR A3=1 OR A4=1 THEN
         IF WRITABLE=1 THEN
             GOSUB PRINT_CHAR
-            WRITABLE=0
+            WRITABLE = 0
         ENDIF
-        KEY_ITER=KEY_ITER+1
+        KEY_ITER = KEY_ITER+1
         WPRC = 0
     ELSE
         WPRC = WPRC+1
         IF WPRC=10 THEN
-            WRITABLE=1
-            WPRC=0
-            KEY_ITER=0
+            WRITABLE = 1
+            WPRC = 0
+            KEY_ITER = 0
         ENDIF       
     ENDIF
     
-    IF KEY_ITER=500 THEN
-        WRITABLE=1
-        KEY_ITER=0
+    IF KEY_ITER=400 THEN
+        WRITABLE = 1
+        KEY_ITER = 0
     ENDIF
     
     ROW = ROW*2
-    IF ROW=16 THEN ROW=1
+    IF ROW=16 THEN ROW = 1
     
     PORTB = ROW
     
@@ -71,55 +74,96 @@ GOTO INICIO
 
 
 PRINT_CHAR:
+    OLD_CHAR = CHAR
     IF A4=1 THEN
-        IF ROW=1 THEN LCDOUT "1"
-        IF ROW=2 THEN LCDOUT "4"
-        IF ROW=4 THEN LCDOUT "7"
+        IF ROW=1 THEN CHAR = 49
+        IF ROW=2 THEN CHAR = 52
+        IF ROW=4 THEN CHAR = 55
         IF ROW=8 THEN
-            LCDOUT "*"
-            CLRD = CLRD+1
+            IF OLD_CHAR=42 THEN
+                IF CUR_POS=0 THEN
+                    GOSUB NL_BACKSPACE
+                ELSE
+                    GOSUB BACKSPACE
+                ENDIF
+                CHAR = 0
+                OPERATION = 1
+            ELSE
+                CHAR = 42
+            ENDIF
         ENDIF
     ENDIF
     IF A3=1 THEN
-        IF ROW=1 THEN LCDOUT "2"
-        IF ROW=2 THEN LCDOUT "5"
-        IF ROW=4 THEN LCDOUT "8"
-        IF ROW=8 THEN LCDOUT "0"
+        IF ROW=1 THEN CHAR = 50
+        IF ROW=2 THEN CHAR = 53
+        IF ROW=4 THEN CHAR = 56
+        IF ROW=8 THEN CHAR = 48
     ENDIF
     IF A2=1 THEN
-        IF ROW=1 THEN LCDOUT "3"
-        IF ROW=2 THEN LCDOUT "6"
-        IF ROW=4 THEN LCDOUT "9"
+        IF ROW=1 THEN CHAR = 51
+        IF ROW=2 THEN CHAR = 54
+        IF ROW=4 THEN CHAR = 57
         IF ROW=8 THEN
-            LCDOUT "#"
-            CLRC = CLRC+1           
+            IF OLD_CHAR=35 THEN
+                IF CLR_ACUM=1 THEN
+                    GOSUB CLR_DISPLAY
+                    OPERATION = 1
+                ELSE
+                    CLR_ACUM = 1
+                ENDIF
+            ELSE
+                CHAR = 35
+                CLR_ACUM = 0
+            ENDIF          
         ENDIF
     ENDIF
+         
+    IF OPERATION=0 THEN
+        LCDOUT CHAR
+        CUR_POS = CUR_POS+1
+    ELSE
+        OPERATION = 0
+    ENDIF
     
-    WRITABLE=0
+    WRITABLE = 0
     
-    CUR_POS = CUR_POS+1
     IF CUR_POS=16 THEN LCDOUT $FE, $C0
-    IF CUR_POS=32 THEN LCDOUT $FE, 2
-    
-    IF CLRC = 3 THEN
-        CLRC = 0                                                                                                                                                                 
-        LCDOUT $FE, 1 
+    IF CUR_POS=32 THEN
+        LCDOUT $FE, 2
         CUR_POS = 0
     ENDIF
     
-    IF CLRD = 2 THEN
+RETURN
+
+
+CLR_DISPLAY:
+    CLR_ACUM = 0                                                                                                                                                                 
+    LCDOUT $FE, 1 
+    CUR_POS = 0
+RETURN
+
+
+BACKSPACE:
+    LCDOUT $FE, $10
+    IF CUR_POS=1 THEN
+        LCDOUT 0
         LCDOUT $FE, $10
-        LCDOUT $FE, $10
+        CUR_POS = 0
+    ELSE
         LCDOUT $FE, $10
         LCDOUT 0
         LCDOUT 0
-        LCDOUT 0
         LCDOUT $FE, $10
         LCDOUT $FE, $10
-        LCDOUT $FE, $10
-        CLRD = 0
         CUR_POS = CUR_POS-2
     ENDIF
 RETURN
 
+
+NL_BACKSPACE:
+    LCDOUT $FE, $CE, 0
+    LCDOUT $FE, $CF, 0
+    LCDOUT $FE, $10
+    LCDOUT $FE, $10
+    CUR_POS = 30
+RETURN
